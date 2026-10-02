@@ -1,0 +1,14 @@
+/* Full-height page; the card centers itself with `margin: auto`.
+   Positioned so it paints above the fixed background layer. */
+.app {
+  position: relative;
+  display: flex;
+  min-height: 100dvh;
+  padding-block: 16px;
+}
+
+@media (max-height: 500px) {
+  .app {
+    padding-block: 12px;
+  }
+}

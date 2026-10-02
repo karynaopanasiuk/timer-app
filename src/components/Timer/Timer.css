@@ -1,0 +1,235 @@
+/* Glass card: dark glass over the near-black background */
+
+.timer {
+  /* The card is the container for the button-row query below. */
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(100% - 32px, 40rem);
+  /* Centers the card; if it is taller than the viewport it starts at the top and scrolls. */
+  margin: auto;
+  padding: clamp(20px, 5vw, 40px);
+  border: 1px solid rgb(255 255 255 / 0.1);
+  border-radius: 28px;
+  background-color: rgb(255 255 255 / 0.05);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    0 24px 60px rgb(0 0 0 / 0.5);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+  text-align: center;
+}
+
+/* No blur available or less transparency requested: a dense dark card instead of glass. */
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .timer {
+    background-color: rgb(22 22 24 / 0.92);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .timer {
+    background-color: rgb(22 22 24 / 0.92);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Small caps labels: the title and the status line. Caps come from CSS only. */
+
+.timer__title,
+.timer__status {
+  font-size: 0.8125rem;
+  line-height: 1.3;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: rgb(255 255 255 / 0.6);
+}
+
+.timer__title {
+  margin-bottom: clamp(12px, 3vh, 28px);
+  font-weight: 500;
+}
+
+/* mm:ss */
+
+.timer__display {
+  /* px minimum: a larger browser font must not push the digits out of the card. */
+  font-size: clamp(48px, min(22vw, 35dvh), 11rem);
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Status line: orange while running and at the limit, gray when idle or paused. */
+
+.timer__status {
+  margin-block: clamp(10px, 2vh, 16px) clamp(24px, 5vh, 40px);
+  font-weight: 600;
+}
+
+.timer__status[data-phase='running'],
+.timer__status[data-phase='limit'] {
+  color: #ff9f0a;
+}
+
+/* Buttons
+   Two buttons share the row as equal columns; a single one sits in the center with the width of
+   one column. Every button is placed in row 1, so the row is equally tall in every state, and a
+   disappearing button overlaps the one that takes its place instead of adding a row. */
+
+.timer__controls {
+  --controls-gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--controls-gap);
+  width: 100%;
+}
+
+.timer__button {
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: max(52px, 3.25rem);
+  padding: 0.5rem 1rem;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  border-radius: 14px;
+  background-color: rgb(255 255 255 / 0.07);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.timer__button[data-place='first'] {
+  grid-column: 1;
+}
+
+.timer__button[data-place='second'] {
+  grid-column: 2;
+}
+
+.timer__button[data-place='single'] {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: calc((100% - var(--controls-gap)) / 2);
+}
+
+/* Two buttons no longer fit side by side (large browser font): one column, main action on top.
+   14.5rem ≈ 2 × the widest button ("Pause": padding + icon + gap + label) + the gap. */
+@container (width < 14.5rem) {
+  .timer__controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .timer__button[data-place] {
+    grid-column: 1;
+    justify-self: stretch;
+    width: auto;
+  }
+
+  .timer__button[data-place='second'] {
+    grid-row: 2;
+  }
+}
+
+.timer__button svg {
+  flex: none;
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+/* Main action: orange with near-black text (#0a0a0a on #ff9f0a ≈ 9.6:1, white would be ≈ 2:1). */
+.timer__button--primary {
+  border-color: transparent;
+  background-color: #ff9f0a;
+  color: #0a0a0a;
+}
+
+@media (hover: hover) {
+  .timer__button:hover {
+    background-color: rgb(255 255 255 / 0.11);
+  }
+
+  .timer__button--primary:hover {
+    background-color: #ffb03d;
+  }
+}
+
+.timer__button:active {
+  background-color: rgb(255 255 255 / 0.04);
+}
+
+.timer__button--primary:active {
+  background-color: #e88e00;
+}
+
+.timer__button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+/* Appearing and disappearing buttons: opacity and transform only, up to 200 ms
+   (BUTTON_MOTION_MS in Timer.tsx). The disappearing button is already inert: no clicks, out of the
+   Tab order. It lies under the button that takes its place and fades out fast from the start
+   (ease-out), so the two labels barely overlap. */
+
+.timer__button[data-motion='enter'] {
+  animation: timer-button-in 180ms ease-out;
+}
+
+.timer__button[data-motion='exit'] {
+  z-index: -1;
+  pointer-events: none;
+  animation: timer-button-out 150ms ease-out forwards;
+}
+
+@keyframes timer-button-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+
+@keyframes timer-button-out {
+  to {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timer__button[data-motion] {
+    animation: none;
+  }
+
+  .timer__button[data-motion='exit'] {
+    visibility: hidden;
+  }
+}
+
+@media (forced-colors: active) {
+  .timer__button {
+    border-color: ButtonText;
+  }
+}
+
+/* Short viewports (phones in landscape): tighter card so it fits without scrolling. */
+@media (max-height: 500px) {
+  .timer {
+    padding-block: 16px;
+  }
+}
