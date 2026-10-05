@@ -70,4 +70,4 @@ Cloudflare Workers (static assets), configured in `wrangler.jsonc`.
 
 - Build command: `npm run build`
 - Deploy command: `npx wrangler deploy`
-- Non-production branch deploy command (preview builds): `npx wrangler versions upload`
+- Non-production branch deploy command (preview builds): `npx wrangler preview` (needs the empty `previews` block in `wrangler.jsonc`)

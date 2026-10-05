@@ -5,5 +5,7 @@
   "assets": {
     // Output of `npm run build`.
     "directory": "./dist"
-  }
+  },
+  // Required by `wrangler preview`, which Cloudflare runs to build previews of non-main branches. Can stay empty.
+  "previews": {}
 }
