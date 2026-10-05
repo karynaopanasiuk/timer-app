@@ -1,0 +1,11 @@
+{
+  // Must match the Worker name in Cloudflare, otherwise the Cloudflare build fails.
+  "name": "timer-app",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    // Output of `npm run build`.
+    "directory": "./dist"
+  },
+  // Required by `wrangler preview`, which Cloudflare runs to build previews of non-main branches. Can stay empty.
+  "previews": {}
+}
