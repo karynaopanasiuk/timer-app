@@ -1,14 +1,9 @@
-/* Full-height page; the card centers itself with `margin: auto`.
-   Positioned so it paints above the fixed background layer. */
+/* Full-height page; the timer block sits in the middle on both axes. The block sizes itself from
+   the viewport (`--w` in Timer.css), so there is no padding here. Positioned, so it paints above
+   the fixed background layer. */
 .app {
   position: relative;
-  display: flex;
+  display: grid;
+  place-items: center;
   min-height: 100dvh;
-  padding-block: 16px;
-}
-
-@media (max-height: 500px) {
-  .app {
-    padding-block: 12px;
-  }
 }

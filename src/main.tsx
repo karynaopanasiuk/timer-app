@@ -1,8 +1,8 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-// Self-hosted Inter Variable (weight axis). The package has no Latin-only stylesheet, but every
-// subset has a unicode-range, so an English UI downloads only the Latin file.
-import '@fontsource-variable/inter'
+// Self-hosted IBM Plex Sans: Regular for the button labels, SemiBold for the digits. Latin only.
+import '@fontsource/ibm-plex-sans/latin-400.css'
+import '@fontsource/ibm-plex-sans/latin-600.css'
 import './index.css'
 import App from './App.tsx'
 
