@@ -45,6 +45,7 @@ npm run lint   # lint with oxlint
 
 ```
 SPEC.md                     specification and acceptance criteria
+wrangler.jsonc              Cloudflare Workers config: static assets from dist/
 src/
 ├── main.tsx                entry point: fonts, global styles, React root
 ├── index.css               global styles: dark color scheme, base font
@@ -65,7 +66,8 @@ src/
 
 ## Deployment
 
-Cloudflare Workers (static assets).
+Cloudflare Workers (static assets), configured in `wrangler.jsonc`.
 
 - Build command: `npm run build`
-- Deploy command: `npx wrangler deploy --assets=./dist --name=timer-app --compatibility-date=2026-10-01`
+- Deploy command: `npx wrangler deploy`
+- Non-production branch deploy command (preview builds): `npx wrangler versions upload`
