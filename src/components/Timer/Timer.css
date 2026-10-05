@@ -44,11 +44,23 @@
   --rim-lit: rgb(255 255 255 / 0.22); /* the sides the light falls on: top, left */
   --rim-unlit: rgb(255 255 255 / 0.17); /* the far sides: bottom, right */
 
-  /* Button morph: calm, no overshoot, a bit shorter than BUTTON_MOTION_MS (Timer.tsx). The keyframes
-     of `timer-morph-content` below are worked out for exactly this curve: if it changes, so must
-     their numbers. */
-  --morph-duration: 240ms;
-  --morph-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* Button morph: calm, no overshoot, a bit shorter than BUTTON_MOTION_MS (Timer.tsx). The glass
+     that stays (and Reset when it widens to the whole row) goes along a soft ease-in-out: it starts
+     without a jolt, never moves faster than about twice its average speed, and settles gently. The
+     keyframes of `timer-morph-content` below are worked out for exactly this curve: if it changes,
+     so must their numbers. */
+  --morph-duration: 250ms;
+  --morph-ease: cubic-bezier(0.4, 0, 0.4, 1);
+
+  /* A button that appears (Reset next to Stop) does not travel: it fades in at its own place, a
+     moment after the other button has started to move, drifting in from that button's side. One
+     that disappears fades out fast, drifting a little toward the button that takes its place. Both
+     end before the morph does (50 + 190 = 240 ms). */
+  --enter-delay: 50ms;
+  --enter-duration: 190ms;
+  --enter-shift: calc(8 * var(--u));
+  --exit-duration: 120ms;
+  --exit-shift: calc(6 * var(--u));
 
   display: flex;
   flex-direction: column;
@@ -204,12 +216,13 @@
   outline-offset: 3px;
 }
 
-/* Morph: the glass of the buttons splits and merges. Only translate, scale, opacity and the color
-   of the rim are animated, so the row keeps its size. For BUTTON_MOTION_MS (Timer.tsx) a button gets data-motion
-   and --morph-shift: where its move or entrance starts, or where its exit ends, in column steps
-   from its place. A button that changes between a column and the full row (data-resize) also
-   starts narrower or wider; its content (the label and the icon together) gets the opposite
-   scale, frame by frame, so neither is ever stretched (see `timer-morph-content`). */
+/* Morph: the glass of the buttons splits and merges. Only translate, scale and opacity are animated
+   (and the color of the rim), so the row keeps its size. For BUTTON_MOTION_MS (Timer.tsx) a button
+   gets data-motion and --morph-shift, in column steps from its place: where its move starts, or the
+   side its entrance comes from or its exit goes to (for those two only the direction counts). A
+   button that changes between a column and the full row (data-resize) also starts narrower or wider;
+   its content (the label and the icon together) gets the opposite scale, frame by frame, so neither
+   is ever stretched (see `timer-morph-content`). */
 
 .timer__button[data-resize='grow'] {
   --morph-sx: var(--half-ratio);
@@ -237,30 +250,31 @@
   animation: timer-morph-content var(--morph-duration) linear both;
 }
 
-/* The rim is a hairline, so the stretch would make its sides thicker or thinner than 1 px. It stays
-   hidden until the width has all but settled (the first half of the morph), then fades in. */
+/* The rim is a hairline, so the stretch would make its sides thicker or thinner than 1 px. It fades
+   out over the start of the morph, stays hidden while the width is still far from its end, and
+   fades back in as it settles: nothing switches on or off. */
 .timer__button[data-motion='move'] {
-  animation-name: timer-morph-move, timer-rim-in;
-  animation-timing-function: var(--morph-ease), ease-out;
+  animation-name: timer-morph-move, timer-rim-morph;
+  animation-timing-function: var(--morph-ease), ease-in-out;
 }
 
-/* Comes out from under the button that stays; it fades in a little after it starts moving. */
+/* Appears at its own place, a moment after the button that stays has started to move: it fades in
+   and drifts a few px in from the side of that button. It starts under it (z-index 1 against 2),
+   and that button still covers most of this one's place when it starts to show. */
 .timer__button[data-motion='enter'] {
   z-index: 1;
-  animation-name: timer-morph-enter, timer-fade-in;
-  animation-duration: var(--morph-duration), 160ms;
-  animation-timing-function: var(--morph-ease), ease-out;
-  animation-delay: 0ms, 40ms;
+  animation-name: timer-morph-enter;
+  animation-duration: var(--enter-duration);
+  animation-delay: var(--enter-delay);
 }
 
-/* Already inert: no clicks, out of the Tab order. Slides under the button that stays and fades
-   out fast. */
+/* Already inert: no clicks, out of the Tab order. Fades out fast where it is, drifting a few px
+   toward the button that takes its place, under it. */
 .timer__button[data-motion='exit'] {
   z-index: 0;
   pointer-events: none;
-  animation-name: timer-morph-exit, timer-fade-out;
-  animation-duration: var(--morph-duration), 140ms;
-  animation-timing-function: var(--morph-ease), ease-out;
+  animation-name: timer-morph-exit;
+  animation-duration: var(--exit-duration);
 }
 
 @keyframes timer-morph-move {
@@ -273,12 +287,11 @@
 /* The content's scale is the reciprocal of the button's, at every moment: the button goes from
    --morph-sx to 1 along `--morph-ease`, s(t) = sx + (1 - sx) * e(t), so the content must go through
    1 / s(t), which is not a straight line from 1 / sx to 1. (Two eased straight lines multiply to
-   1.14 at their worst, when the button is halfway to its size, in the first 15% of the time: the
-   label and the icon would swell by 14% there.) So the curve is cut into short straight pieces: a
-   keyframe every few percent, where 1 / s(t) is exact, `linear` between them. The pieces are
-   shorter where the ease is steep (the first tenth of the time covers 40% of the way). In every
-   frame the button's scale times the content's stays within 1 ± 0.006, for both directions
-   (sx = 0.48 and sx = 2.07).
+   1.14 at their worst, when the button is halfway to its size, at 43% of the time: the label and
+   the icon would swell by 14% there.) So the curve is cut into short straight pieces: a keyframe
+   every 4-13% of the time, `linear` between them, closer together where the ease is steep (half of
+   the way is covered between 26% and 52%). In every frame the button's scale times the content's
+   stays within 1 ± 0.006, for both directions (sx = 0.48 and sx = 2.07).
    Each keyframe: the offset t, and e(t) of `--morph-ease`: 1 / s = 1 / (sx * (1 - e) + e). The
    nudge, if any (Start in a column → Start in the row), eases out along the same e(t). */
 @keyframes timer-morph-content {
@@ -286,78 +299,69 @@
     translate: var(--morph-nudge, 0px) 0;
     scale: calc(1 / var(--morph-sx, 1)) 1;
   }
-  3% {
-    translate: calc(var(--morph-nudge, 0px) * 0.8789) 0;
-    scale: calc(1 / (var(--morph-sx, 1) * 0.8789 + 0.1211)) 1;
+  5% {
+    translate: calc(var(--morph-nudge, 0px) * 0.9945) 0;
+    scale: calc(1 / (var(--morph-sx, 1) * 0.9945 + 0.0055)) 1;
   }
-  6% {
-    translate: calc(var(--morph-nudge, 0px) * 0.7575) 0;
-    scale: calc(1 / (var(--morph-sx, 1) * 0.7575 + 0.2425)) 1;
+  9% {
+    translate: calc(var(--morph-nudge, 0px) * 0.9813) 0;
+    scale: calc(1 / (var(--morph-sx, 1) * 0.9813 + 0.0187)) 1;
   }
-  10% {
-    translate: calc(var(--morph-nudge, 0px) * 0.6033) 0;
-    scale: calc(1 / (var(--morph-sx, 1) * 0.6033 + 0.3967)) 1;
+  17% {
+    translate: calc(var(--morph-nudge, 0px) * 0.9271) 0;
+    scale: calc(1 / (var(--morph-sx, 1) * 0.9271 + 0.0729)) 1;
   }
-  14% {
-    translate: calc(var(--morph-nudge, 0px) * 0.4691) 0;
-    scale: calc(1 / (var(--morph-sx, 1) * 0.4691 + 0.5309)) 1;
+  26% {
+    translate: calc(var(--morph-nudge, 0px) * 0.8148) 0;
+    scale: calc(1 / (var(--morph-sx, 1) * 0.8148 + 0.1852)) 1;
   }
-  18% {
-    translate: calc(var(--morph-nudge, 0px) * 0.3619) 0;
-    scale: calc(1 / (var(--morph-sx, 1) * 0.3619 + 0.6381)) 1;
+  33% {
+    translate: calc(var(--morph-nudge, 0px) * 0.6913) 0;
+    scale: calc(1 / (var(--morph-sx, 1) * 0.6913 + 0.3087)) 1;
   }
-  23% {
-    translate: calc(var(--morph-nudge, 0px) * 0.2633) 0;
-    scale: calc(1 / (var(--morph-sx, 1) * 0.2633 + 0.7367)) 1;
+  43% {
+    translate: calc(var(--morph-nudge, 0px) * 0.49) 0;
+    scale: calc(1 / (var(--morph-sx, 1) * 0.49 + 0.51)) 1;
   }
-  31% {
-    translate: calc(var(--morph-nudge, 0px) * 0.1625) 0;
-    scale: calc(1 / (var(--morph-sx, 1) * 0.1625 + 0.8375)) 1;
+  52% {
+    translate: calc(var(--morph-nudge, 0px) * 0.3252) 0;
+    scale: calc(1 / (var(--morph-sx, 1) * 0.3252 + 0.6748)) 1;
   }
-  41% {
-    translate: calc(var(--morph-nudge, 0px) * 0.0912) 0;
-    scale: calc(1 / (var(--morph-sx, 1) * 0.0912 + 0.9088)) 1;
+  62% {
+    translate: calc(var(--morph-nudge, 0px) * 0.1857) 0;
+    scale: calc(1 / (var(--morph-sx, 1) * 0.1857 + 0.8143)) 1;
   }
-  55% {
-    translate: calc(var(--morph-nudge, 0px) * 0.0397) 0;
-    scale: calc(1 / (var(--morph-sx, 1) * 0.0397 + 0.9603)) 1;
+  74% {
+    translate: calc(var(--morph-nudge, 0px) * 0.0776) 0;
+    scale: calc(1 / (var(--morph-sx, 1) * 0.0776 + 0.9224)) 1;
   }
-  75% {
-    translate: calc(var(--morph-nudge, 0px) * 0.0089) 0;
-    scale: calc(1 / (var(--morph-sx, 1) * 0.0089 + 0.9911)) 1;
+  87% {
+    translate: calc(var(--morph-nudge, 0px) * 0.0173) 0;
+    scale: calc(1 / (var(--morph-sx, 1) * 0.0173 + 0.9827)) 1;
   }
 }
 
 @keyframes timer-morph-enter {
   from {
-    translate: calc(var(--morph-shift) * var(--col-dx)) 0;
+    opacity: 0;
+    translate: calc(var(--morph-shift) * var(--enter-shift)) 0;
   }
 }
 
 @keyframes timer-morph-exit {
   to {
-    translate: calc(var(--morph-shift) * var(--col-dx)) 0;
+    opacity: 0;
+    translate: calc(var(--morph-shift) * var(--exit-shift)) 0;
   }
 }
 
-@keyframes timer-rim-in {
-  0%,
-  55% {
+/* 0% and 100% are the rim as it is (no keyframe: the style of the button). */
+@keyframes timer-rim-morph {
+  20%,
+  50% {
     box-shadow:
-      inset 1px 1px 0 0 transparent,
-      inset -1px -1px 0 0 transparent;
-  }
-}
-
-@keyframes timer-fade-in {
-  from {
-    opacity: 0;
-  }
-}
-
-@keyframes timer-fade-out {
-  to {
-    opacity: 0;
+      inset 1px 1px 0 0 rgb(255 255 255 / 0),
+      inset -1px -1px 0 0 rgb(255 255 255 / 0);
   }
 }
 
