@@ -1,117 +1,119 @@
-/* Glass card: dark glass over the near-black background */
+/* The timer, as in the Figma frame (1440 × 1024): the digits and, under them, the buttons, in a
+   block of 583 px that sits in the middle of the screen. No card. Everything is a share of the
+   block's width `--w`, so a smaller screen just scales the whole thing. */
 
 .timer {
-  /* The card is the container for the button-row query below. */
-  container-type: inline-size;
+  /* 583 px (Figma) at most; less when the width or the height of the screen asks for it. 1.69 is
+     a hair under the block's width over its height (583 / 340 = 1.715), so the block always fits
+     the height. */
+  --w: min(583px, 100vw - 32px, (100dvh - 32px) * 1.69);
+
+  /* One pixel of the Figma layout: 1/583 of the block's width. The sizes are written in them. */
+  --u: calc(var(--w) / 583);
+
+  --digits-size: calc(213.69 * var(--u));
+  --stack-gap: calc(24 * var(--u)); /* digits → buttons */
+  --button-height: calc(100 * var(--u));
+  --button-radius: calc(23 * var(--u));
+  --label-size: calc(44 * var(--u));
+  --icon-height: calc(40 * var(--u));
+  --start-pad: calc(6 * var(--u)); /* before the label of Start in a column (paused) */
+
+  /* The buttons share the row: the gap and the width of a column (a share of the row). `--col-dx`
+     is the step from the center of the row to the center of a column; the morph moves by it. */
+  --gap-ratio: 0.03431; /* 20 px */
+  --half-ratio: calc((1 - var(--gap-ratio)) / 2);
+  --gap: calc(var(--w) * var(--gap-ratio));
+  --col-dx: calc(var(--w) * (1 + var(--gap-ratio)) / 4);
+
+  /* Button tones: neutral glass, #6b6b6b at 20% (a bit more on hover, less when pressed). */
+  --glass: rgb(107 107 107 / 0.2);
+  --glass-hover: rgb(107 107 107 / 0.28);
+  --glass-active: rgb(107 107 107 / 0.16);
+
+  /* The same three tones as a solid dark fill, for when there is no blur (the fallbacks at the end
+     of this file). The default is inside the #151515-#1c1c1c range of the SPEC; hover is a bit
+     lighter, pressed a bit darker. */
+  --glass-solid: #1c1c1c;
+  --glass-solid-hover: #262626;
+  --glass-solid-active: #161616;
+
+  /* The rim of the glass, as in Figma (Glass, light angle -45deg): a hairline of white along the
+     edge. The light comes from the top left, so the top and left sides are a bit brighter than the
+     bottom and right ones. See `.timer__button`. */
+  --rim-lit: rgb(255 255 255 / 0.22); /* the sides the light falls on: top, left */
+  --rim-unlit: rgb(255 255 255 / 0.17); /* the far sides: bottom, right */
+
+  /* Button morph: calm, no overshoot, a bit shorter than BUTTON_MOTION_MS (Timer.tsx). The keyframes
+     of `timer-morph-content` below are worked out for exactly this curve: if it changes, so must
+     their numbers. */
+  --morph-duration: 240ms;
+  --morph-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
   display: flex;
   flex-direction: column;
-  align-items: center;
-  width: min(100% - 32px, 40rem);
-  /* Centers the card; if it is taller than the viewport it starts at the top and scrolls. */
-  margin: auto;
-  padding: clamp(20px, 5vw, 40px);
-  border: 1px solid rgb(255 255 255 / 0.1);
-  border-radius: 28px;
-  background-color: rgb(255 255 255 / 0.05);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.08),
-    0 24px 60px rgb(0 0 0 / 0.5);
-  -webkit-backdrop-filter: blur(24px);
-  backdrop-filter: blur(24px);
-  text-align: center;
+  gap: var(--stack-gap);
+  width: var(--w);
 }
 
-/* No blur available or less transparency requested: a dense dark card instead of glass. */
-@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
-  .timer {
-    background-color: rgb(22 22 24 / 0.92);
-  }
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  .timer {
-    background-color: rgb(22 22 24 / 0.92);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-}
-
-/* Small caps labels: the title and the status line. Caps come from CSS only. */
-
-.timer__title,
-.timer__status {
-  font-size: 0.8125rem;
-  line-height: 1.3;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  color: rgb(255 255 255 / 0.6);
-}
-
-.timer__title {
-  margin-bottom: clamp(12px, 3vh, 28px);
-  font-weight: 500;
-}
-
-/* mm:ss */
-
+/* mm:ss, as wide as the block. The digits are tabular, so 01:11 and 01:12 are equally wide. */
 .timer__display {
-  /* px minimum: a larger browser font must not push the digits out of the card. */
-  font-size: clamp(48px, min(22vw, 35dvh), 11rem);
-  font-weight: 300;
-  line-height: 1;
-  letter-spacing: -0.02em;
+  font-size: var(--digits-size);
+  font-weight: 600;
+  line-height: 1.01;
+  letter-spacing: 0.002em;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-}
-
-/* Status line: orange while running and at the limit, gray when idle or paused. */
-
-.timer__status {
-  margin-block: clamp(10px, 2vh, 16px) clamp(24px, 5vh, 40px);
-  font-weight: 600;
-}
-
-.timer__status[data-phase='running'],
-.timer__status[data-phase='limit'] {
-  color: #ff9f0a;
+  text-align: center;
+  color: #fff;
 }
 
 /* Buttons
-   Two buttons share the row as equal columns; a single one sits in the center with the width of
-   one column. Every button is placed in row 1, so the row is equally tall in every state, and a
-   disappearing button overlaps the one that takes its place instead of adding a row. */
+   Two buttons share the row as equal columns; a single one takes the whole row. Every button is
+   placed in row 1, so the row is equally tall in every state, and a disappearing button overlaps
+   the one that takes its place instead of adding a row. */
 
 .timer__controls {
-  --controls-gap: 12px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--controls-gap);
-  width: 100%;
+  grid-auto-rows: var(--button-height);
+  column-gap: var(--gap);
 }
 
 .timer__button {
+  position: relative;
+  z-index: 2;
   grid-row: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  min-height: max(52px, 3.25rem);
-  padding: 0.5rem 1rem;
-  border: 1px solid rgb(255 255 255 / 0.1);
-  border-radius: 14px;
-  background-color: rgb(255 255 255 / 0.07);
-  font-size: 1rem;
-  font-weight: 600;
-  line-height: 1.25;
+  padding: 0;
+  border: 0;
+  border-radius: var(--button-radius);
+  background-color: var(--glass);
+  /* The glass: a light blur and a hairline rim. Nothing heavier. The rim is two inset shadows, one
+     shifted 1 px down and right, the other 1 px up and left: each leaves a band 1 px thick along
+     two sides (top and left; bottom and right). The band is as thick as the edge faces the light,
+     so, as in Figma, the top-left and bottom-right corners (1.4 px) catch more light and the other
+     two none (it thins out there). It is painted like the edge of the button, so it is 1 px at any
+     size and never lost to pixel rounding (a ring cut out with `mask` lost its right side at some
+     fractional sizes). It is the same on hover and press. */
+  box-shadow:
+    inset 1px 1px 0 0 var(--rim-lit),
+    inset -1px -1px 0 0 var(--rim-unlit);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  font-size: var(--label-size);
+  font-weight: 400;
+  line-height: 1.01;
+  letter-spacing: -0.02em;
   white-space: nowrap;
   cursor: pointer;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-  transition:
-    background-color 150ms ease,
-    border-color 150ms ease,
-    color 150ms ease;
+  /* No scale on press: hover and pressed only change the tone of the glass, quickly. */
+  transition: background-color 100ms ease;
 }
 
 .timer__button[data-place='first'] {
@@ -124,57 +126,77 @@
 
 .timer__button[data-place='single'] {
   grid-column: 1 / -1;
-  justify-self: center;
-  width: calc((100% - var(--controls-gap)) / 2);
 }
 
-/* Two buttons no longer fit side by side (large browser font): one column, main action on top.
-   14.5rem ≈ 2 × the widest button ("Pause": padding + icon + gap + label) + the gap. */
-@container (width < 14.5rem) {
-  .timer__controls {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .timer__button[data-place] {
-    grid-column: 1;
-    justify-self: stretch;
-    width: auto;
-  }
-
-  .timer__button[data-place='second'] {
-    grid-row: 2;
-  }
+/* The label and the icon after it: one group, centered in the button (the button centers it on
+   both axes), the icon on the label's middle line. The morph scales the group as a whole. */
+.timer__content {
+  display: flex;
+  align-items: center;
 }
 
-.timer__button svg {
+/* Start in a column, next to Reset (paused): 6 px of padding before its label, as in Figma. The
+   group is centered with it, so the label starts where Stop's does (x = 78) and stays put when
+   Stop and Start swap. Start alone in the row (idle) has no padding. */
+.timer__button[data-place='first'] .timer__content:has(> .timer__icon[data-icon='play']) {
+  padding-inline-start: var(--start-pad);
+}
+
+/* The label and the icon are white and dimmed (Figma): the label at 40%, the icon at 30%. Both turn
+   fully white on hover, on keyboard focus and while pressed. Each is dimmed by its own `opacity`,
+   set on the label and on the icon themselves, never on the button or on `.timer__content`: the
+   morph fades the button in and out, and a share on a parent would multiply with the icon's. On a
+   screen with no hover (touch) they are not dimmed: see `hover: none` below. */
+.timer__label {
+  opacity: 0.4;
+  transition: opacity 150ms ease;
+}
+
+/* The icon is decorative and draws in the text color. Every icon is the size of its Figma frame
+   (32 × 40 px) and sits 4 px after the label, play 6 px. */
+.timer__icon {
   flex: none;
-  width: 1.125rem;
-  height: 1.125rem;
+  width: calc(32 * var(--u));
+  height: var(--icon-height);
+  margin-inline-start: calc(4 * var(--u));
+  opacity: 0.3;
+  transition: opacity 150ms ease;
 }
 
-/* Main action: orange with near-black text (#0a0a0a on #ff9f0a ≈ 9.6:1, white would be ≈ 2:1). */
-.timer__button--primary {
-  border-color: transparent;
-  background-color: #ff9f0a;
-  color: #0a0a0a;
+.timer__icon[data-icon='play'] {
+  margin-inline-start: calc(6 * var(--u));
 }
 
 @media (hover: hover) {
   .timer__button:hover {
-    background-color: rgb(255 255 255 / 0.11);
+    background-color: var(--glass-hover);
   }
 
-  .timer__button--primary:hover {
-    background-color: #ffb03d;
+  .timer__button:hover .timer__label,
+  .timer__button:hover .timer__icon {
+    opacity: 1;
+  }
+}
+
+/* No hover on this screen (touch): the label and the icon never get a hover state to turn white, so
+   they are white from the start, as on hover. Their opacity never changes here, so the transition
+   above stays idle. */
+@media (hover: none) {
+  .timer__label,
+  .timer__icon {
+    opacity: 1;
   }
 }
 
 .timer__button:active {
-  background-color: rgb(255 255 255 / 0.04);
+  background-color: var(--glass-active);
 }
 
-.timer__button--primary:active {
-  background-color: #e88e00;
+.timer__button:active .timer__label,
+.timer__button:active .timer__icon,
+.timer__button:focus-visible .timer__label,
+.timer__button:focus-visible .timer__icon {
+  opacity: 1;
 }
 
 .timer__button:focus-visible {
@@ -182,38 +204,174 @@
   outline-offset: 3px;
 }
 
-/* Appearing and disappearing buttons: opacity and transform only, up to 200 ms
-   (BUTTON_MOTION_MS in Timer.tsx). The disappearing button is already inert: no clicks, out of the
-   Tab order. It lies under the button that takes its place and fades out fast from the start
-   (ease-out), so the two labels barely overlap. */
+/* Morph: the glass of the buttons splits and merges. Only translate, scale, opacity and the color
+   of the rim are animated, so the row keeps its size. For BUTTON_MOTION_MS (Timer.tsx) a button gets data-motion
+   and --morph-shift: where its move or entrance starts, or where its exit ends, in column steps
+   from its place. A button that changes between a column and the full row (data-resize) also
+   starts narrower or wider; its content (the label and the icon together) gets the opposite
+   scale, frame by frame, so neither is ever stretched (see `timer-morph-content`). */
 
+.timer__button[data-resize='grow'] {
+  --morph-sx: var(--half-ratio);
+}
+
+.timer__button[data-resize='shrink'] {
+  --morph-sx: calc(1 / var(--half-ratio));
+}
+
+/* Start widening to the full row (from paused, or from running): it has no padding any more, so
+   the group starts shifted by half of it (the group is centered) to keep the label where it was.
+   The shift lies in the button's squeezed space, hence the division by its scale. */
+.timer__button[data-resize='grow'] .timer__content:has(> .timer__icon[data-icon='play']) {
+  --morph-nudge: calc(var(--start-pad) / 2 / var(--morph-sx));
+}
+
+.timer__button[data-motion] {
+  animation-duration: var(--morph-duration);
+  animation-timing-function: var(--morph-ease);
+  animation-fill-mode: both;
+}
+
+/* `linear`: the easing is already in the keyframes (the ease is not applied twice). */
+.timer__button[data-motion='move'] .timer__content {
+  animation: timer-morph-content var(--morph-duration) linear both;
+}
+
+/* The rim is a hairline, so the stretch would make its sides thicker or thinner than 1 px. It stays
+   hidden until the width has all but settled (the first half of the morph), then fades in. */
+.timer__button[data-motion='move'] {
+  animation-name: timer-morph-move, timer-rim-in;
+  animation-timing-function: var(--morph-ease), ease-out;
+}
+
+/* Comes out from under the button that stays; it fades in a little after it starts moving. */
 .timer__button[data-motion='enter'] {
-  animation: timer-button-in 180ms ease-out;
+  z-index: 1;
+  animation-name: timer-morph-enter, timer-fade-in;
+  animation-duration: var(--morph-duration), 160ms;
+  animation-timing-function: var(--morph-ease), ease-out;
+  animation-delay: 0ms, 40ms;
 }
 
+/* Already inert: no clicks, out of the Tab order. Slides under the button that stays and fades
+   out fast. */
 .timer__button[data-motion='exit'] {
-  z-index: -1;
+  z-index: 0;
   pointer-events: none;
-  animation: timer-button-out 150ms ease-out forwards;
+  animation-name: timer-morph-exit, timer-fade-out;
+  animation-duration: var(--morph-duration), 140ms;
+  animation-timing-function: var(--morph-ease), ease-out;
 }
 
-@keyframes timer-button-in {
+@keyframes timer-morph-move {
   from {
-    opacity: 0;
-    transform: scale(0.94);
+    translate: calc(var(--morph-shift) * var(--col-dx)) 0;
+    scale: var(--morph-sx, 1) 1;
   }
 }
 
-@keyframes timer-button-out {
+/* The content's scale is the reciprocal of the button's, at every moment: the button goes from
+   --morph-sx to 1 along `--morph-ease`, s(t) = sx + (1 - sx) * e(t), so the content must go through
+   1 / s(t), which is not a straight line from 1 / sx to 1. (Two eased straight lines multiply to
+   1.14 at their worst, when the button is halfway to its size, in the first 15% of the time: the
+   label and the icon would swell by 14% there.) So the curve is cut into short straight pieces: a
+   keyframe every few percent, where 1 / s(t) is exact, `linear` between them. The pieces are
+   shorter where the ease is steep (the first tenth of the time covers 40% of the way). In every
+   frame the button's scale times the content's stays within 1 ± 0.006, for both directions
+   (sx = 0.48 and sx = 2.07).
+   Each keyframe: the offset t, and e(t) of `--morph-ease`: 1 / s = 1 / (sx * (1 - e) + e). The
+   nudge, if any (Start in a column → Start in the row), eases out along the same e(t). */
+@keyframes timer-morph-content {
+  0% {
+    translate: var(--morph-nudge, 0px) 0;
+    scale: calc(1 / var(--morph-sx, 1)) 1;
+  }
+  3% {
+    translate: calc(var(--morph-nudge, 0px) * 0.8789) 0;
+    scale: calc(1 / (var(--morph-sx, 1) * 0.8789 + 0.1211)) 1;
+  }
+  6% {
+    translate: calc(var(--morph-nudge, 0px) * 0.7575) 0;
+    scale: calc(1 / (var(--morph-sx, 1) * 0.7575 + 0.2425)) 1;
+  }
+  10% {
+    translate: calc(var(--morph-nudge, 0px) * 0.6033) 0;
+    scale: calc(1 / (var(--morph-sx, 1) * 0.6033 + 0.3967)) 1;
+  }
+  14% {
+    translate: calc(var(--morph-nudge, 0px) * 0.4691) 0;
+    scale: calc(1 / (var(--morph-sx, 1) * 0.4691 + 0.5309)) 1;
+  }
+  18% {
+    translate: calc(var(--morph-nudge, 0px) * 0.3619) 0;
+    scale: calc(1 / (var(--morph-sx, 1) * 0.3619 + 0.6381)) 1;
+  }
+  23% {
+    translate: calc(var(--morph-nudge, 0px) * 0.2633) 0;
+    scale: calc(1 / (var(--morph-sx, 1) * 0.2633 + 0.7367)) 1;
+  }
+  31% {
+    translate: calc(var(--morph-nudge, 0px) * 0.1625) 0;
+    scale: calc(1 / (var(--morph-sx, 1) * 0.1625 + 0.8375)) 1;
+  }
+  41% {
+    translate: calc(var(--morph-nudge, 0px) * 0.0912) 0;
+    scale: calc(1 / (var(--morph-sx, 1) * 0.0912 + 0.9088)) 1;
+  }
+  55% {
+    translate: calc(var(--morph-nudge, 0px) * 0.0397) 0;
+    scale: calc(1 / (var(--morph-sx, 1) * 0.0397 + 0.9603)) 1;
+  }
+  75% {
+    translate: calc(var(--morph-nudge, 0px) * 0.0089) 0;
+    scale: calc(1 / (var(--morph-sx, 1) * 0.0089 + 0.9911)) 1;
+  }
+}
+
+@keyframes timer-morph-enter {
+  from {
+    translate: calc(var(--morph-shift) * var(--col-dx)) 0;
+  }
+}
+
+@keyframes timer-morph-exit {
+  to {
+    translate: calc(var(--morph-shift) * var(--col-dx)) 0;
+  }
+}
+
+@keyframes timer-rim-in {
+  0%,
+  55% {
+    box-shadow:
+      inset 1px 1px 0 0 transparent,
+      inset -1px -1px 0 0 transparent;
+  }
+}
+
+@keyframes timer-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes timer-fade-out {
   to {
     opacity: 0;
-    transform: scale(0.94);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .timer__button[data-motion] {
+  .timer__button[data-motion],
+  .timer__button[data-motion] .timer__content {
     animation: none;
+  }
+
+  /* The tone of the glass (hover, press) and the label and the icon change at once. */
+  .timer__button,
+  .timer__label,
+  .timer__icon {
+    transition: none;
   }
 
   .timer__button[data-motion='exit'] {
@@ -221,15 +379,48 @@
   }
 }
 
-@media (forced-colors: active) {
+/* No blur, so no glass: the buttons get the solid dark fill (--glass-solid* above); the rim and the
+   colors of the content stay. Two causes, one look: the user asks for less transparency, or the
+   browser has no `backdrop-filter` (`-webkit-` counts too). A media query and a feature query
+   cannot share a block, so there are two, side by side, with the same tones. */
+@media (prefers-reduced-transparency: reduce) {
+  .timer {
+    --glass: var(--glass-solid);
+    --glass-hover: var(--glass-solid-hover);
+    --glass-active: var(--glass-solid-active);
+  }
+
   .timer__button {
-    border-color: ButtonText;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 }
 
-/* Short viewports (phones in landscape): tighter card so it fits without scrolling. */
-@media (max-height: 500px) {
+/* A browser without the property has no blur to turn off: only the fill changes. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .timer {
-    padding-block: 16px;
+    --glass: var(--glass-solid);
+    --glass-hover: var(--glass-solid-hover);
+    --glass-active: var(--glass-solid-active);
+  }
+}
+
+/* Forced colors: system colors only; the buttons get a visible border (no glass rim), the labels
+   and the icons full strength. */
+@media (forced-colors: active) {
+  .timer__button {
+    border: 1px solid ButtonText;
+    background-color: ButtonFace;
+    box-shadow: none;
+    color: ButtonText;
+  }
+
+  .timer__label,
+  .timer__icon {
+    opacity: 1;
+  }
+
+  .timer__button:focus-visible {
+    outline-color: Highlight;
   }
 }

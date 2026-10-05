@@ -1,106 +1,31 @@
-/* Fixed layer under the content. Glows that go past the edges are clipped and add no scroll.
-   Static base: near black, slightly lighter in the middle. */
+/* Fixed layer under the content, plain black. The WebGL canvas (Background.tsx) fills it and has
+   something to show only while the pointer's smoke is alive; at rest, and without WebGL or with
+   reduced motion, the layer is just black. What goes past the edges is clipped and adds no
+   scroll. */
 .background {
   position: fixed;
   inset: 0;
   overflow: hidden;
   pointer-events: none;
-  background: radial-gradient(ellipse at 50% 40%, #141414 0%, #0a0a0a 45%, #000 100%);
+  background: #000;
 }
 
-/* Faint soft glows, so the glass has something to blur. The edges fade out in the gradient itself
-   (no blur filter). Only transform and opacity are animated, so the compositor moves them without
-   repaints. */
-.background__glow {
-  position: absolute;
-  will-change: transform;
+/* The shader's canvas. Its pixels are half of its CSS size; CSS stretches it. No `filter: blur()`
+   here: the shader already draws the smoke as a soft Gaussian, and a CSS blur would cost a
+   full-screen pass on every frame and wash out the film grain too. */
+.background__canvas {
+  position: fixed;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
 
-/* Neutral gray, upper left */
-.background__glow--haze {
-  top: -12vmax;
-  left: -10vmax;
-  width: 60vmax;
-  height: 60vmax;
-  background: radial-gradient(
-    closest-side,
-    rgb(255 255 255 / 0.07),
-    rgb(255 255 255 / 0.035) 50%,
-    transparent
-  );
-  animation: glow-haze 32s ease-in-out -6s infinite alternate;
-}
-
-/* Warm orange, lower right, partly behind the card */
-.background__glow--orange {
-  top: calc(64% - 26vmax);
-  left: calc(64% - 26vmax);
-  width: 52vmax;
-  height: 52vmax;
-  background: radial-gradient(
-    closest-side,
-    rgb(255 159 10 / 0.16),
-    rgb(255 159 10 / 0.07) 50%,
-    transparent
-  );
-  animation: glow-orange 38s ease-in-out -14s infinite alternate;
-}
-
-/* Neutral gray, lower left */
-.background__glow--mist {
-  bottom: -16vmax;
-  left: -6vmax;
-  width: 44vmax;
-  height: 44vmax;
-  background: radial-gradient(
-    closest-side,
-    rgb(255 255 255 / 0.06),
-    rgb(255 255 255 / 0.03) 50%,
-    transparent
-  );
-  animation: glow-mist 26s ease-in-out -9s infinite alternate;
-}
-
-@keyframes glow-haze {
-  from {
-    transform: translate3d(0, 0, 0) scale(1);
-    opacity: 0.75;
-  }
-
-  to {
-    transform: translate3d(8vmax, 6vmax, 0) scale(1.08);
-    opacity: 1;
-  }
-}
-
-@keyframes glow-orange {
-  from {
-    transform: translate3d(0, 0, 0) scale(1.05);
-    opacity: 1;
-  }
-
-  to {
-    transform: translate3d(-9vmax, -6vmax, 0) scale(0.95);
-    opacity: 0.7;
-  }
-}
-
-@keyframes glow-mist {
-  from {
-    transform: translate3d(0, 0, 0) scale(0.95);
-    opacity: 0.7;
-  }
-
-  to {
-    transform: translate3d(7vmax, -8vmax, 0) scale(1.1);
-    opacity: 1;
-  }
-}
-
-/* Same composition, no motion. */
-@media (prefers-reduced-motion: reduce) {
-  .background__glow {
-    animation: none;
-    will-change: auto;
+/* System colours: the smoke would fight the text, so the layer goes away. (Background.tsx makes no
+   canvas then, either.) */
+@media (forced-colors: active) {
+  .background {
+    display: none;
   }
 }

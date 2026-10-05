@@ -7,7 +7,7 @@ export const LIMIT_MS = 3_599_000
 /**
  * After every transition (a button press or the auto-stop at the limit) actions are ignored for
  * this long. After a transition another button can end up under the pointer, so the second click
- * of a double click must not press it (e.g. Start, then Pause at 00:00).
+ * of a double click must not press it (e.g. Start, then Stop at 00:00).
  */
 export const ACTION_LOCK_MS = 400
 
@@ -66,8 +66,8 @@ function pauseAt(state: TimerState, now: number): TimerState {
     now,
     announcement:
       elapsedMs >= LIMIT_MS
-        ? `Maximum time reached. Timer paused at ${formatTime(LIMIT_MS)}`
-        : `Timer paused at ${formatTime(elapsedMs)}`,
+        ? `Maximum time reached. Timer stopped at ${formatTime(LIMIT_MS)}`
+        : `Timer stopped at ${formatTime(elapsedMs)}`,
   }
 }
 
@@ -93,7 +93,7 @@ export function timerReducer(state: TimerState, action: TimerAction): TimerState
       return state.status === 'running' ? pauseAt(state, action.now) : state
 
     case 'tick':
-      // A late tick after Pause or Reset is ignored and cannot bring back the old value.
+      // A late tick after Stop or Reset is ignored and cannot bring back the old value.
       if (state.status !== 'running') return state
       return getElapsedMs(state, action.now) >= LIMIT_MS
         ? pauseAt(state, action.now)
@@ -119,7 +119,7 @@ export function useTimer(): UseTimerResult {
   const phase = getPhase(state)
 
   // The only interval: it exists only while running and just triggers a recalculation.
-  // Cleanup removes it on Pause / Reset / limit and on the StrictMode re-mount in dev.
+  // Cleanup removes it on Stop / Reset / limit and on the StrictMode re-mount in dev.
   useEffect(() => {
     if (!isRunning) return
 
