@@ -8,11 +8,12 @@ import type { TimerPhase } from './useTimer.ts'
 import './Timer.css'
 
 /**
- * How long the buttons morph after a phase change (`--morph-duration` in Timer.css, a bit shorter).
- * A disappearing button stays in the DOM (inert) this long. Shorter than ACTION_LOCK_MS, so the
- * morph is over before the next press can do anything.
+ * How long the buttons morph after a phase change (`--morph-duration` in Timer.css, a frame or two
+ * shorter: the morph ends on its soft tail, so it must not be cut off). A disappearing button stays
+ * in the DOM (inert) this long. Shorter than ACTION_LOCK_MS, so the morph is over before the next
+ * press can do anything.
  */
-const BUTTON_MOTION_MS = 250
+const BUTTON_MOTION_MS = 280
 
 /** `main` is the Start ↔ Stop slot: one and the same <button>, never re-mounted between the two. */
 type ButtonId = 'main' | 'reset'
@@ -56,7 +57,8 @@ interface Transition {
 
 interface Motion {
   kind: 'move' | 'enter' | 'exit'
-  /** In column steps from the button's place: where its move or entrance starts, or its exit ends. */
+  /** In column steps from the button's place: where its move starts. For an entrance or an exit
+   *  only the direction counts (the side it drifts in from / out to, a few px). */
   shift: number
   /** A move between a column and the full row also changes the width: the button starts narrower
    *  (`grow`) or wider (`shrink`) than it ends. */
@@ -66,8 +68,8 @@ interface Motion {
 /**
  * How a button morphs in a transition (the glass splits and merges):
  * - move: it slides (and widens or narrows) from its old place to the new one;
- * - enter: it comes out from under the other button, starting at that button's old place;
- * - exit: it slides under the other button, to that button's new place, and fades out.
+ * - enter: it fades in at its place, drifting in a little from the other button's side;
+ * - exit: it fades out where it is, drifting a little toward the other button's new place.
  * running ↔ paused keeps both places, so nothing moves.
  */
 function getMotion(id: ButtonId, { from, to }: Transition): Motion | null {
