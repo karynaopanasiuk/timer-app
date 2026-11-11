@@ -17,9 +17,12 @@
   --stack-gap: calc(24 * var(--u)); /* digits → buttons */
   --button-height: calc(100 * var(--u));
   --button-radius: calc(23 * var(--u));
-  --label-size: calc(44 * var(--u));
-  --icon-height: calc(40 * var(--u));
-  --start-pad: calc(6 * var(--u)); /* before the label of Start in a column (paused) */
+  --label-size: calc(40 * var(--u));
+  /* The label went from 44 (Figma) to 40, and the icons and their gaps follow it: 40 / 44 of their
+     Figma sizes, so the label and the icon shrink together. */
+  --label-scale: calc(40 / 44);
+  --icon-height: calc(40 * var(--label-scale) * var(--u));
+  --start-pad: calc(6 * var(--label-scale) * var(--u)); /* before the label of Start in a column (paused) */
 
   /* The buttons share the row: the gap and the width of a column (a share of the row). `--col-dx`
      is the step from the center of the row to the center of a column; the morph moves by it. */
@@ -121,11 +124,11 @@
   -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
   color: #fff;
-  /* DM Mono, from the page. It is monospaced, so no negative tracking: it would cramp the letters. */
+  /* DM Mono, from the page, slightly tightened. */
   font-size: var(--label-size);
   font-weight: 400;
   line-height: 1.01;
-  letter-spacing: 0;
+  letter-spacing: -0.02em;
   white-space: nowrap;
   cursor: pointer;
   touch-action: manipulation;
@@ -174,15 +177,15 @@
    (32 × 40 px) and sits 4 px after the label, play 6 px. */
 .timer__icon {
   flex: none;
-  width: calc(32 * var(--u));
+  width: calc(32 * var(--label-scale) * var(--u));
   height: var(--icon-height);
-  margin-inline-start: calc(4 * var(--u));
+  margin-inline-start: calc(4 * var(--label-scale) * var(--u));
   opacity: 0.3;
   transition: opacity 150ms ease;
 }
 
 .timer__icon[data-icon='play'] {
-  margin-inline-start: calc(6 * var(--u));
+  margin-inline-start: calc(6 * var(--label-scale) * var(--u));
 }
 
 @media (hover: hover) {
