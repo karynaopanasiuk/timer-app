@@ -71,3 +71,7 @@ Cloudflare Workers (static assets), configured in `wrangler.jsonc`.
 - Build command: `npm run build`
 - Deploy command: `npx wrangler deploy`
 - Non-production branch deploy command (preview builds): `npx wrangler preview` (needs the empty `previews` block in `wrangler.jsonc`)
+
+## Credits
+
+The favicon is the “distorted face” emoji from [Twemoji](https://github.com/jdecked/twemoji) by Twitter, Inc and other contributors, licensed under [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/).
