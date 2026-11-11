@@ -1,6 +1,6 @@
 :root {
   color-scheme: dark;
-  font-family: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'DM Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   line-height: 1.5;
   color: #fff;
   /* Black like the page, so overscroll on phones never shows white. */

@@ -27,7 +27,7 @@ A single-screen web timer built with Vite, React and TypeScript.
 ## Tech
 
 - Vite, React, TypeScript
-- Fonts self-hosted via Fontsource: VT323 for the digits (`@fontsource/vt323`), IBM Plex Sans for the button labels (`@fontsource/ibm-plex-sans`); no other runtime dependencies
+- Fonts self-hosted via Fontsource: VT323 for the digits (`@fontsource/vt323`), DM Mono for the button labels (`@fontsource/dm-mono`); no other runtime dependencies
 - Background shader in plain WebGL, no libraries
 
 ## Getting started
