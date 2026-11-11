@@ -1,8 +1,8 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-// Self-hosted IBM Plex Sans: Regular for the button labels, SemiBold for the digits. Latin only.
+// Self-hosted fonts, latin only: IBM Plex Sans Regular for the button labels, VT323 for the digits.
 import '@fontsource/ibm-plex-sans/latin-400.css'
-import '@fontsource/ibm-plex-sans/latin-600.css'
+import '@fontsource/vt323/latin-400.css'
 import './index.css'
 import App from './App.tsx'
 

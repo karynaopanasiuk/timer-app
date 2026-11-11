@@ -11,7 +11,9 @@
   /* One pixel of the Figma layout: 1/583 of the block's width. The sizes are written in them. */
   --u: calc(var(--w) / 583);
 
-  --digits-size: calc(213.69 * var(--u));
+  /* VT323 is monospaced: every character is 0.4 em wide, so "00:00" is 2 em. 291.5 makes it as wide
+     as the block (583). */
+  --digits-size: calc(291.5 * var(--u));
   --stack-gap: calc(24 * var(--u)); /* digits → buttons */
   --button-height: calc(100 * var(--u));
   --button-radius: calc(23 * var(--u));
@@ -68,12 +70,15 @@
   width: var(--w);
 }
 
-/* mm:ss, as wide as the block. The digits are tabular, so 01:11 and 01:12 are equally wide. */
+/* mm:ss in the pixel font VT323, as wide as the block. The font is monospaced, so 01:11 and 01:12
+   are equally wide. It has one weight only; font-synthesis stops the browser from faking a bold.
+   The line is 0.74 em (≈ 216 px), as tall as the old digits, so the buttons stay where they were. */
 .timer__display {
+  font-family: 'VT323', ui-monospace, monospace;
   font-size: var(--digits-size);
-  font-weight: 600;
-  line-height: 1.01;
-  letter-spacing: 0.002em;
+  font-weight: 400;
+  font-synthesis: none;
+  line-height: 0.74;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   text-align: center;
