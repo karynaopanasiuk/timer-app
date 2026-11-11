@@ -190,7 +190,7 @@ export function Timer() {
       {/* The page heading for screen readers only: the screen shows no visible title. */}
       <h1 className="visually-hidden">Timer</h1>
 
-      {/* IBM Plex Sans has tabular figures, so the time never changes its width. */}
+      {/* VT323 is monospaced, so the time never changes its width. */}
       <p className="timer__display">{formatTime(timer.elapsedMs)}</p>
 
       <div className="timer__controls">
